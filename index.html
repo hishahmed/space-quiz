@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Space Exploration Quiz</title>
+<style>
+  :root {
+    --bg: #f3f4fb;
+    --card: #ffffff;
+    --text: #1d1f33;
+    --muted: #6b6f8a;
+    --border: #e1e3f0;
+    --accent: #5b5bf0;
+    --accent-2: #a855f7;
+    --good: #16a34a;
+    --good-bg: #dcfce7;
+    --bad: #dc2626;
+    --bad-bg: #fee2e2;
+    --shadow: 0 10px 30px rgba(30, 30, 80, .08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0b0d1a;
+      --card: #151829;
+      --text: #e8e9f5;
+      --muted: #9a9dba;
+      --border: #262a44;
+      --accent: #7c7cff;
+      --accent-2: #c084fc;
+      --good: #4ade80;
+      --good-bg: rgba(34, 197, 94, .15);
+      --bad: #f87171;
+      --bad-bg: rgba(239, 68, 68, .15);
+      --shadow: 0 10px 30px rgba(0, 0, 0, .4);
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--text);
+    background: var(--bg);
+    background-image: radial-gradient(circle at 20% 10%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 40%),
+                      radial-gradient(circle at 80% 90%, color-mix(in srgb, var(--accent-2) 12%, transparent), transparent 40%);
+  }
+  .app { width: 100%; max-width: 440px; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 24px;
+    box-shadow: var(--shadow);
+    animation: fadeIn .35s ease;
+  }
+  .hud {
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    position: relative;
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    margin: -8px -8px 16px;
+    padding: 12px 14px;
+    border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+    border-radius: 12px;
+    background:
+      repeating-linear-gradient(0deg, color-mix(in srgb, var(--accent) 6%, transparent) 0 1px, transparent 1px 4px),
+      color-mix(in srgb, var(--accent) 6%, var(--card));
+    overflow: hidden;
+  }
+  .hud::before, .hud::after {
+    content: ""; position: absolute; width: 10px; height: 10px;
+    border-color: var(--accent); border-style: solid; opacity: .8;
+  }
+  .hud::before { top: 4px; left: 4px; border-width: 2px 0 0 2px; }
+  .hud::after { bottom: 4px; right: 4px; border-width: 0 2px 2px 0; }
+  .hud-title { min-width: 0; }
+  .hud-label {
+    display: flex; align-items: center; gap: 6px;
+    font-family: var(--mono); font-size: 11px; font-weight: 600;
+    letter-spacing: .12em; text-transform: uppercase; color: var(--muted);
+  }
+  .led {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--good);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--good) 25%, transparent);
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  h1 { font-size: 18px; margin: 2px 0 0; letter-spacing: -.01em; }
+  .score {
+    display: flex; flex-direction: column; align-items: flex-end;
+    padding: 6px 10px; border-radius: 8px;
+    border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
+    background: var(--card);
+    font-family: var(--mono);
+    transition: transform .2s, box-shadow .2s;
+  }
+  .score-label { font-size: 10px; letter-spacing: .14em; color: var(--muted); }
+  .score-value {
+    font-size: 20px; font-weight: 700; line-height: 1.1;
+    font-variant-numeric: tabular-nums; color: var(--accent);
+  }
+  .score-value small { font-size: 13px; color: var(--muted); font-weight: 600; }
+  .score.bump {
+    transform: scale(1.08);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--good) 35%, transparent);
+  }
+  .score.bump .score-value { color: var(--good); }
+  @keyframes pulse { 50% { opacity: .35; } }
+  .visually-hidden {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+  }
+  .meta { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .progress { height: 8px; background: var(--border); border-radius: 999px; overflow: hidden; margin-bottom: 20px; }
+  .progress-fill {
+    height: 100%; width: 0;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    border-radius: inherit;
+    transition: width .4s ease;
+  }
+  .question { font-size: 16px; font-weight: 600; margin: 0 0 16px; }
+  .question:focus, .results h2:focus { outline: none; }
+  .options { display: grid; gap: 10px; }
+  .option {
+    font: inherit; font-size: 15px; color: var(--text);
+    text-align: left; padding: 12px 14px;
+    background: var(--card); border: 1.5px solid var(--border); border-radius: 12px;
+    cursor: pointer; transition: border-color .15s, background .15s, transform .1s;
+  }
+  .option:hover:not(:disabled) { border-color: var(--accent); }
+  .option:active:not(:disabled) { transform: scale(.98); }
+  .option:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .option:disabled { cursor: default; }
+  .option.correct { border-color: var(--good); background: var(--good-bg); color: var(--good); font-weight: 600; animation: pop .4s ease; }
+  .option.wrong { border-color: var(--bad); background: var(--bad-bg); color: var(--bad); animation: shake .45s ease; }
+  .option.dim { opacity: .5; }
+  .feedback { min-height: 24px; margin-top: 14px; font-size: 14px; font-weight: 600; }
+  .feedback.good { color: var(--good); animation: fadeIn .3s ease; }
+  .feedback.bad { color: var(--bad); animation: fadeIn .3s ease; }
+  .btn {
+    font: inherit; font-weight: 600; font-size: 15px;
+    width: 100%; margin-top: 12px; padding: 12px;
+    border: 0; border-radius: 12px; cursor: pointer; color: #fff;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    transition: opacity .2s, transform .1s;
+  }
+  .btn:hover { opacity: .9; }
+  .btn:active { transform: scale(.98); }
+  .btn[hidden] { display: none; }
+  .results { text-align: center; }
+  .emoji { font-size: 64px; line-height: 1; margin: 8px 0 12px; display: inline-block; animation: bounce 1s ease infinite alternate; }
+  .results h2 { font-size: 20px; margin: 0 0 6px; }
+  .results p { color: var(--muted); margin: 0 0 8px; }
+  .big-score { font-size: 32px; font-weight: 800; background: linear-gradient(90deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-5px); }
+    80% { transform: translateX(5px); }
+  }
+  @keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.04); } 100% { transform: scale(1); } }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  @keyframes bounce { from { transform: translateY(0) rotate(-4deg); } to { transform: translateY(-10px) rotate(4deg); } }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<main class="app">
+  <div class="card" id="card"></div>
+</main>
+<script>
+const QUESTIONS = [
+  { q: "Who was the first human to travel into space?", a: ["Neil Armstrong", "Yuri Gagarin", "Alan Shepard", "John Glenn"], c: 1 },
+  { q: "Which planet is known as the Red Planet?", a: ["Venus", "Jupiter", "Mars", "Mercury"], c: 2 },
+  { q: "In what year did Apollo 11 land on the Moon?", a: ["1965", "1969", "1972", "1959"], c: 1 },
+  { q: "What is the largest planet in our solar system?", a: ["Saturn", "Neptune", "Earth", "Jupiter"], c: 3 },
+  { q: "Which rover landed on Mars in February 2021?", a: ["Curiosity", "Spirit", "Perseverance", "Opportunity"], c: 2 },
+  { q: "What was the first artificial satellite launched into orbit?", a: ["Sputnik 1", "Explorer 1", "Vanguard 1", "Telstar"], c: 0 },
+  { q: "Which space telescope launched in December 2021?", a: ["Hubble", "Kepler", "Spitzer", "James Webb"], c: 3 },
+  { q: "Which probe is the farthest human-made object from Earth?", a: ["Voyager 1", "Pioneer 10", "New Horizons", "Voyager 2"], c: 0 },
+  { q: "Who was the first woman in space?", a: ["Sally Ride", "Valentina Tereshkova", "Mae Jemison", "Eileen Collins"], c: 1 },
+  { q: "Approximately how long does sunlight take to reach Earth?", a: ["8 seconds", "8 minutes", "8 hours", "1 minute"], c: 1 },
+];
+
+const card = document.getElementById("card");
+let index = 0, score = 0;
+
+function scoreMarkup() {
+  return `<span class="visually-hidden">${score} out of ${QUESTIONS.length}</span><span aria-hidden="true">${String(score).padStart(2, "0")}<small>/${QUESTIONS.length}</small></span>`;
+}
+
+function start(moveFocus = true) {
+  index = 0; score = 0;
+  renderQuestion(moveFocus);
+}
+
+function renderQuestion(moveFocus = true) {
+  const item = QUESTIONS[index];
+  const pct = (index / QUESTIONS.length) * 100;
+  card.style.animation = "none"; card.offsetHeight; card.style.animation = "";
+  card.innerHTML = `
+    <header class="hud">
+      <div class="hud-title">
+        <div class="hud-label"><span class="led" aria-hidden="true"></span>Mission control · Live</div>
+        <h1><span aria-hidden="true">🚀 </span>Space Quiz</h1>
+      </div>
+      <div class="score" role="status" aria-live="polite" aria-atomic="true">
+        <span class="score-label">SCORE</span>
+        <span class="score-value" id="score">${scoreMarkup()}</span>
+      </div>
+    </header>
+    <div class="meta"><span>Question ${index + 1} of ${QUESTIONS.length}</span><span>${Math.round(pct)}%</span></div>
+    <div class="progress" id="progress" role="progressbar" aria-label="Questions answered" aria-valuemin="0" aria-valuemax="${QUESTIONS.length}" aria-valuenow="${index}">
+      <div class="progress-fill" id="fill" style="width:${pct}%"></div>
+    </div>
+    <h2 class="question" id="question" tabindex="-1">${item.q}</h2>
+    <div class="options">
+      ${item.a.map((opt, i) => `<button class="option" data-i="${i}">${opt}</button>`).join("")}
+    </div>
+    <div class="feedback" id="feedback" aria-live="polite"></div>
+    <button class="btn" id="next" hidden>${index === QUESTIONS.length - 1 ? "See results" : "Next question"} →</button>
+  `;
+  card.querySelectorAll(".option").forEach(btn => btn.addEventListener("click", () => choose(+btn.dataset.i)));
+  document.getElementById("next").addEventListener("click", next);
+  if (moveFocus) document.getElementById("question").focus();
+}
+
+function choose(i) {
+  const item = QUESTIONS[index];
+  const buttons = card.querySelectorAll(".option");
+  const feedback = document.getElementById("feedback");
+  buttons.forEach(b => b.disabled = true);
+  const correct = i === item.c;
+  if (correct) {
+    score++;
+    const s = document.getElementById("score");
+    s.innerHTML = scoreMarkup();
+    s.parentElement.classList.add("bump");
+    setTimeout(() => s.parentElement.classList.remove("bump"), 300);
+    buttons[i].classList.add("correct");
+    feedback.className = "feedback good";
+    feedback.textContent = "✅ Correct! Stellar work.";
+  } else {
+    buttons[i].classList.add("wrong");
+    buttons[item.c].classList.add("correct");
+    feedback.className = "feedback bad";
+    feedback.textContent = `❌ Not quite — it's ${item.a[item.c]}.`;
+  }
+  buttons.forEach((b, j) => { if (j !== i && j !== item.c) b.classList.add("dim"); });
+  document.getElementById("fill").style.width = `${((index + 1) / QUESTIONS.length) * 100}%`;
+  document.getElementById("progress").setAttribute("aria-valuenow", index + 1);
+  const nextBtn = document.getElementById("next");
+  nextBtn.hidden = false;
+  nextBtn.focus();
+}
+
+function next() {
+  index++;
+  index < QUESTIONS.length ? renderQuestion() : renderResults();
+}
+
+function renderResults() {
+  const total = QUESTIONS.length;
+  const ratio = score / total;
+  const [emoji, title, msg] =
+    ratio === 1   ? ["🤩", "Perfect launch!", "You're ready for mission control."] :
+    ratio >= .8  ? ["🚀", "Outstanding!", "You really know your cosmos."] :
+    ratio >= .6  ? ["😊", "Nice orbit!", "Solid knowledge of space history."] :
+    ratio >= .4  ? ["🤔", "Not bad, cadet.", "A few more star charts and you're there."] :
+                   ["😵", "Lost in space!", "Time to brush up — try again!"];
+  card.style.animation = "none"; card.offsetHeight; card.style.animation = "";
+  card.innerHTML = `
+    <div class="results">
+      <div class="emoji" aria-hidden="true">${emoji}</div>
+      <h2 id="results-title" tabindex="-1">${title}</h2>
+      <div class="big-score">${score} / ${total}</div>
+      <p>${msg}</p>
+      <div class="progress" aria-hidden="true" style="margin:16px 0 4px"><div class="progress-fill" id="fill" style="width:0"></div></div>
+      <button class="btn" id="restart">Play again ↻</button>
+    </div>
+  `;
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    document.getElementById("fill").style.width = `${ratio * 100}%`;
+  }));
+  document.getElementById("restart").addEventListener("click", () => start(true));
+  document.getElementById("results-title").focus();
+}
+
+start(false);
+</script>
+</body>
+</html>
