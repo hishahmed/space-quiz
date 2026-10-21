@@ -159,6 +159,13 @@
   .results h2 { font-size: 20px; margin: 0 0 6px; }
   .results p { color: var(--muted); margin: 0 0 8px; }
   .big-score { font-size: 32px; font-weight: 800; background: linear-gradient(90deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .review { margin: 16px 0 4px; border: 1px solid var(--border); border-radius: 12px; text-align: left; }
+  .review summary { padding: 12px 14px; color: var(--accent); font-weight: 600; cursor: pointer; }
+  .review summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 12px; }
+  .review-list { margin: 0; padding: 0 14px 12px; list-style: none; }
+  .review-item + .review-item { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+  .results .review-question { color: var(--text); font-weight: 600; }
+  .results .review-answer { margin: 0 0 4px; }
   @keyframes shake {
     0%, 100% { transform: translateX(0); }
     20% { transform: translateX(-8px); }
@@ -192,6 +199,7 @@ const QUESTIONS = [
 
 const card = document.getElementById("card");
 let index = 0, score = 0;
+let answers = [];
 
 function scoreMarkup() {
   return `<span class="visually-hidden">${score} out of ${QUESTIONS.length}</span><span aria-hidden="true">${String(score).padStart(2, "0")}<small>/${QUESTIONS.length}</small></span>`;
@@ -199,6 +207,7 @@ function scoreMarkup() {
 
 function start(moveFocus = true) {
   index = 0; score = 0;
+  answers = [];
   renderQuestion(moveFocus);
 }
 
@@ -235,6 +244,7 @@ function renderQuestion(moveFocus = true) {
 
 function choose(i) {
   const item = QUESTIONS[index];
+  answers[index] = i;
   const buttons = card.querySelectorAll(".option");
   const feedback = document.getElementById("feedback");
   buttons.forEach(b => b.disabled = true);
@@ -270,6 +280,9 @@ function next() {
 function renderResults() {
   const total = QUESTIONS.length;
   const ratio = score / total;
+  const missed = QUESTIONS
+    .map((item, i) => ({ item, answer: answers[i], questionNumber: i + 1 }))
+    .filter(({ item, answer }) => answer !== item.c);
   const [emoji, title, msg] =
     ratio === 1   ? ["🤩", "Perfect launch!", "You're ready for mission control."] :
     ratio >= .8  ? ["🚀", "Outstanding!", "You really know your cosmos."] :
@@ -284,6 +297,20 @@ function renderResults() {
       <div class="big-score">${score} / ${total}</div>
       <p>${msg}</p>
       <div class="progress" aria-hidden="true" style="margin:16px 0 4px"><div class="progress-fill" id="fill" style="width:0"></div></div>
+      ${missed.length
+        ? `<details class="review">
+            <summary>Review ${missed.length} missed question${missed.length === 1 ? "" : "s"}</summary>
+            <ol class="review-list">
+              ${missed.map(({ item, answer, questionNumber }) => `
+                <li class="review-item">
+                  <p class="review-question">Question ${questionNumber}: ${item.q}</p>
+                  <p class="review-answer"><strong>Your answer:</strong> ${item.a[answer]}</p>
+                  <p class="review-answer"><strong>Correct answer:</strong> ${item.a[item.c]}</p>
+                </li>
+              `).join("")}
+            </ol>
+          </details>`
+        : `<p>All answers correct — no missed questions to review.</p>`}
       <button class="btn" id="restart">Play again ↻</button>
     </div>
   `;
